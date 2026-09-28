@@ -1,0 +1,15 @@
+{
+  "name": "vol-fee-hook",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm --filter @vol-fee-hook/contracts test",
+    "chain": "anvil --disable-code-size-limit",
+    "deploy:local": "pnpm --filter @vol-fee-hook/contracts deploy:local",
+    "swap:local": "pnpm --filter @vol-fee-hook/contracts swap:local",
+    "keeper": "pnpm --filter @vol-fee-hook/keeper start",
+    "fills": "pnpm --filter @vol-fee-hook/keeper fills",
+    "volmath": "pnpm --filter @vol-fee-hook/keeper volmath"
+  }
+}

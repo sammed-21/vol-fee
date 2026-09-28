@@ -130,11 +130,7 @@ contract VolFeeHook {
     // Hook callbacks
     // ---------------------------------------------------------------------
 
-    function afterInitialize(address, PoolKey calldata key, uint160, int24)
-        external
-        onlyPoolManager
-        returns (bytes4)
-    {
+    function afterInitialize(address, PoolKey calldata key, uint160, int24) external onlyPoolManager returns (bytes4) {
         if (!key.fee.isDynamicFee()) revert MustUseDynamicFee();
         _state[key.toId()] = FeeState({
             fee: initialFee,

@@ -1,0 +1,14 @@
+{
+  "name": "@vol-fee-hook/keeper",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "volmath": "node src/volMath.mjs",
+    "fills": "node src/fills.mjs"
+  },
+  "dependencies": {
+    "viem": "^2.21.0",
+    "@vol-fee-hook/contracts": "workspace:*"
+  }
+}

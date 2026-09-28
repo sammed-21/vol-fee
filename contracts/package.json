@@ -1,0 +1,16 @@
+{
+  "name": "@vol-fee-hook/contracts",
+  "private": true,
+  "scripts": {
+    "build": "forge build && node scripts/generate.mjs",
+    "test": "forge test",
+    "fmt": "forge fmt",
+    "deploy:local": "forge script script/DevLocal.s.sol --rpc-url ${RPC_URL:-http://127.0.0.1:8545} --broadcast --private-key ${PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80} --disable-code-size-limit && node scripts/generate.mjs",
+    "swap:local": "forge script script/DevSwap.s.sol --rpc-url ${RPC_URL:-http://127.0.0.1:8545} --broadcast --private-key ${PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}",
+    "generate": "node scripts/generate.mjs"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./abi/index.js"
+  }
+}

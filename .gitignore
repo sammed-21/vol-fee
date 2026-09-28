@@ -1,14 +1,14 @@
-# Compiler files
-cache/
-out/
+# Foundry
+contracts/cache/
+contracts/out/
+contracts/broadcast/*/31337/
+contracts/deployments/31337.json
 
-# Ignores development broadcast logs
-!/broadcast
-/broadcast/*/31337/
-/broadcast/**/dry-run/
+# Generated from contracts/out + deployments (pnpm build)
+contracts/abi/generated.js
 
-# Docs
-docs/
+# JS
+node_modules/
 
-# Dotenv file
+# Dotenv
 .env

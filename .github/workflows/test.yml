@@ -5,36 +5,33 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  FOUNDRY_PROFILE: ci
-
 jobs:
   check:
-    name: Foundry project
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
 
-      - name: Show Forge version
-        run: |
-          forge --version
+      - run: pnpm install --frozen-lockfile
 
-      - name: Run Forge fmt
-        run: |
-          forge fmt --check
-        id: fmt
+      - name: forge fmt
+        working-directory: contracts
+        run: forge fmt --check
 
-      - name: Run Forge build
-        run: |
-          forge build --sizes
-        id: build
+      # forge build + regenerate ABIs/deployments for the keeper
+      - run: pnpm build
 
-      - name: Run Forge tests
-        run: |
-          forge test -vvv
-        id: test
+      - name: forge test
+        run: pnpm test -- -vvv
+
+      - name: keeper imports resolve against generated ABIs
+        run: node -e 'import("@vol-fee-hook/contracts").then(m => { for (const f of ["setFee","feeFor","feeState","keeper","minFee","maxFee"]) if (!m.volFeeHookAbi.some(x => x.name === f)) throw new Error("missing " + f) })'
+        working-directory: keeper
