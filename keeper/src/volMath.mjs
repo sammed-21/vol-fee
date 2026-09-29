@@ -8,6 +8,7 @@
 export const DEFAULTS = { base: 500, k: 50, min: 500, max: 10_000 };
 
 export function variance(ticks) {
+  console.log({ ticks });
   const d = ticks.slice(1).map((t, i) => t - ticks[i]);
   if (d.length < 2) return 0;
   const mean = d.reduce((a, b) => a + b, 0) / d.length;
@@ -23,7 +24,7 @@ export function feeFromTicks(ticks, { base, k, min, max } = DEFAULTS) {
 
 function randomWalk(n, stepStd, seed) {
   let s = seed >>> 0;
-  const rand = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+  const rand = () => (s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32;
   const gauss = () => Math.sqrt(-2 * Math.log(rand() || 1e-12)) * Math.cos(2 * Math.PI * rand());
   const out = [-197_000]; // ~ETH/USDC-ish tick
   for (let i = 1; i < n; i++) out.push(out[i - 1] + Math.round(gauss() * stepStd));

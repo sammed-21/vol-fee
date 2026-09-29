@@ -2,7 +2,8 @@
 // The hook applies a write from the next block: every swap in block N pays feeFor() as read at block N.
 import { createPublicClient, createWalletClient, http, encodeAbiParameters, keccak256 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { volFeeHookAbi, poolManagerAbi, getDeployment } from "@vol-fee-hook/contracts";
+import { volFeeHookAbi, poolManagerAbi } from "@vol-fee-hook/contracts";
+import { resolveTarget } from "./target.mjs";
 import { feeFromTicks, DEFAULTS } from "./volMath.mjs";
 
 const env = process.env;
@@ -21,11 +22,7 @@ const MODEL = {
 
 const publicClient = createPublicClient({ transport: http(RPC_URL) });
 const chainId = await publicClient.getChainId();
-const deployment = env.HOOK ? {} : getDeployment(chainId);
-const HOOK = env.HOOK ?? deployment.hook;
-const POOL_ID = env.POOL_ID ?? deployment.poolId;
-const POOL_MANAGER = env.POOL_MANAGER ?? deployment.poolManager;
-if (!HOOK || !POOL_ID || !POOL_MANAGER) throw new Error("need HOOK, POOL_ID, POOL_MANAGER (env or deployment file)");
+const { hook: HOOK, poolId: POOL_ID, poolManager: POOL_MANAGER } = resolveTarget(chainId, env);
 
 const account = privateKeyToAccount(KEEPER_PK);
 const chain = { id: chainId, name: `chain-${chainId}`, nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [RPC_URL] } } };
