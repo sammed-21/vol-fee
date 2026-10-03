@@ -1,9 +1,9 @@
 // Keeper: sample the pool tick on an interval, compute the fee off-chain, write it with setFee.
-// The hook applies a write from the next block: every swap in block N pays feeFor() as read at block N.
-import { createPublicClient, createWalletClient, http, encodeAbiParameters, keccak256 } from "viem";
+// The hook/plugin applies a write from the next block: every swap in block N pays feeFor() as read at block N.
+// KEEPER_TARGET=v4 (default) drives the Uniswap v4 VolFeeHook; KEEPER_TARGET=algebra the Algebra KeeperFeePlugin.
+import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { volFeeHookAbi, poolManagerAbi } from "@vol-fee-hook/contracts";
-import { resolveTarget } from "./target.mjs";
+import { createTarget } from "./target.mjs";
 import { feeFromTicks, DEFAULTS } from "./volMath.mjs";
 
 const env = process.env;
@@ -22,62 +22,39 @@ const MODEL = {
 
 const publicClient = createPublicClient({ transport: http(RPC_URL) });
 const chainId = await publicClient.getChainId();
-const { hook: HOOK, poolId: POOL_ID, poolManager: POOL_MANAGER } = resolveTarget(chainId, env);
-
 const account = privateKeyToAccount(KEEPER_PK);
 const chain = { id: chainId, name: `chain-${chainId}`, nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [RPC_URL] } } };
 const walletClient = createWalletClient({ account, chain, transport: http(RPC_URL) });
-
-const hook = { address: HOOK, abi: volFeeHookAbi };
-
-// PoolManager stores pools at mapping slot 6; slot0 packs sqrtPriceX96 (160 bits) | tick (int24) | ...
-const POOLS_SLOT = 6n;
-const slot0Slot = keccak256(encodeAbiParameters([{ type: "bytes32" }, { type: "uint256" }], [POOL_ID, POOLS_SLOT]));
-
-async function readTick() {
-  const word = BigInt(
-    await publicClient.readContract({ address: POOL_MANAGER, abi: poolManagerAbi, functionName: "extsload", args: [slot0Slot] }),
-  );
-  const raw = Number((word >> 160n) & 0xffffffn);
-  return raw >= 0x800000 ? raw - 0x1000000 : raw;
-}
-
-async function onChainBounds() {
-  const [keeper, minFee, maxFee] = await Promise.all(
-    ["keeper", "minFee", "maxFee"].map((functionName) => publicClient.readContract({ ...hook, functionName })),
-  );
-  return { keeper, minFee: Number(minFee), maxFee: Number(maxFee) };
-}
+const target = createTarget({ publicClient, walletClient, chainId, env });
 
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
 async function main() {
-  const { keeper } = await onChainBounds();
+  await target.preflight?.();
+  const { keeper } = await target.readConfig();
   if (keeper.toLowerCase() !== account.address.toLowerCase()) {
-    throw new Error(`signer ${account.address} is not the hook keeper ${keeper}`);
+    throw new Error(`signer ${account.address} is not the keeper ${keeper}`);
   }
-  log(`keeper ${account.address} | chain ${chainId} | hook ${HOOK}`);
-  log(`pool ${POOL_ID} | every ${INTERVAL_MS}ms, window ${WINDOW}, model`, MODEL);
+  log(`keeper ${account.address} | chain ${chainId} | ${target.describe}`);
+  log(`every ${INTERVAL_MS}ms, window ${WINDOW}, model`, MODEL);
 
   const ticks = [];
   for (;;) {
     try {
-      ticks.push(await readTick());
+      ticks.push(await target.readTick());
       if (ticks.length > WINDOW) ticks.shift();
 
       if (ticks.length >= MIN_SAMPLES) {
         // Bounds can change on-chain; clamp so setFee never reverts on FeeOutOfBounds.
-        const { minFee, maxFee } = await onChainBounds();
-        const target = Math.min(maxFee, Math.max(minFee, feeFromTicks(ticks, MODEL)));
-        const state = await publicClient.readContract({ ...hook, functionName: "feeState", args: [POOL_ID] });
-        const scheduled = Number(state.nextFee);
+        const { minFee, maxFee } = await target.readConfig();
+        const fee = Math.min(maxFee, Math.max(minFee, feeFromTicks(ticks, MODEL)));
+        const scheduled = await target.scheduledFee();
 
-        if (Math.abs(target - scheduled) >= MIN_CHANGE) {
-          const txHash = await walletClient.writeContract({ ...hook, functionName: "setFee", args: [POOL_ID, target] });
-          const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-          log(`tick ${ticks.at(-1)} | setFee ${scheduled} -> ${target} pips | live from block ${receipt.blockNumber + 1n} | ${receipt.status}`);
+        if (Math.abs(fee - scheduled) >= MIN_CHANGE) {
+          const receipt = await publicClient.waitForTransactionReceipt({ hash: await target.setFee(fee) });
+          log(`tick ${ticks.at(-1)} | setFee ${scheduled} -> ${fee} pips | live from block ${receipt.blockNumber + 1n} | ${receipt.status}`);
         } else {
-          log(`tick ${ticks.at(-1)} | fee ${scheduled} pips (target ${target}, no write)`);
+          log(`tick ${ticks.at(-1)} | fee ${scheduled} pips (target ${fee}, no write)`);
         }
       } else {
         log(`tick ${ticks.at(-1)} | warming up ${ticks.length}/${MIN_SAMPLES}`);

@@ -1,0 +1,13 @@
+# Separate Foundry project: Algebra Integral v1.2.2 needs solc 0.8.20 + paris,
+# while the Uniswap v4 hook in ../ needs 0.8.26 + cancun.
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib", "../lib"]
+solc = "0.8.20"
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 200
+bytecode_hash = "none"
+fs_permissions = [{ access = "read-write", path = "../deployments" }]

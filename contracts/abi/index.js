@@ -1,4 +1,12 @@
-export { volFeeHookAbi, poolManagerAbi, deployments } from "./generated.js";
+export {
+  volFeeHookAbi,
+  poolManagerAbi,
+  keeperFeePluginAbi,
+  keeperFeePluginFactoryAbi,
+  algebraPoolAbi,
+  deployments,
+  algebraDeployments,
+} from "./generated.js";
 import { deployments } from "./generated.js";
 
 /// Addresses written by the deploy scripts (contracts/deployments/<chainId>.json).

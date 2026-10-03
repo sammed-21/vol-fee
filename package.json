@@ -8,6 +8,8 @@
     "chain": "anvil --disable-code-size-limit",
     "deploy:local": "pnpm --filter @vol-fee-hook/contracts deploy:local",
     "swap:local": "pnpm --filter @vol-fee-hook/contracts swap:local",
+    "deploy:local:algebra": "pnpm --filter @vol-fee-hook/contracts deploy:local:algebra",
+    "swap:local:algebra": "pnpm --filter @vol-fee-hook/contracts swap:local:algebra",
     "keeper": "pnpm --filter @vol-fee-hook/keeper start",
     "fills": "pnpm --filter @vol-fee-hook/keeper fills",
     "volmath": "pnpm --filter @vol-fee-hook/keeper volmath"

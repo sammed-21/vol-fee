@@ -4,3 +4,9 @@
 [submodule "lib/v4-periphery"]
 	path = contracts/lib/v4-periphery
 	url = https://github.com/uniswap/v4-periphery
+[submodule "contracts/algebra/lib/Algebra"]
+	path = contracts/algebra/lib/Algebra
+	url = https://github.com/cryptoalgebra/Algebra.git
+[submodule "contracts/algebra/lib/openzeppelin-contracts"]
+	path = contracts/algebra/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts.git

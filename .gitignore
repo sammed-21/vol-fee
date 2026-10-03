@@ -12,3 +12,9 @@ node_modules/
 
 # Dotenv
 .env
+
+# Algebra Foundry project
+contracts/algebra/cache/
+contracts/algebra/out/
+contracts/algebra/broadcast/*/31337/
+contracts/deployments/31337.algebra.json

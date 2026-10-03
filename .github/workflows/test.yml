@@ -24,14 +24,20 @@ jobs:
 
       - name: forge fmt
         working-directory: contracts
-        run: forge fmt --check
+        run: forge fmt --check && cd algebra && forge fmt --check
 
-      # forge build + regenerate ABIs/deployments for the keeper
+      # forge build (v4 + algebra) + regenerate ABIs/deployments for the keeper
       - run: pnpm build
 
       - name: forge test
         run: pnpm test -- -vvv
 
       - name: keeper imports resolve against generated ABIs
-        run: node -e 'import("@vol-fee-hook/contracts").then(m => { for (const f of ["setFee","feeFor","feeState","keeper","minFee","maxFee"]) if (!m.volFeeHookAbi.some(x => x.name === f)) throw new Error("missing " + f) })'
+        run: |
+          node -e 'import("@vol-fee-hook/contracts").then(m => {
+            const need = { volFeeHookAbi: ["setFee","feeFor","feeState","keeper","minFee","maxFee"],
+                           keeperFeePluginAbi: ["setFee","feeFor","feeState","factory"],
+                           keeperFeePluginFactoryAbi: ["keeper","bounds"], algebraPoolAbi: ["globalState","plugin"] };
+            for (const [abi, fns] of Object.entries(need)) for (const f of fns)
+              if (!m[abi].some(x => x.name === f)) throw new Error(abi + " missing " + f) })'
         working-directory: keeper
